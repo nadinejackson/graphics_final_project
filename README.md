@@ -1,1 +1,8 @@
-# graphics_final_project
+Nadine Jackson
+
+Dank Jean Icons
+
+Features:
+light
+perspective
+mesh
