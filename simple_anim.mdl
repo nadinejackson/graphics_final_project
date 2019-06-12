@@ -1,0 +1,13 @@
+frames 50
+basename simple_50
+push
+move 250 250 0
+rotate y 360 boii
+vary boii 0 49 0 1
+rotate x 90 boi
+vary boi 0 24 0 1
+vary boi 25 49 1 0
+torus -300 0 0 50 75
+scale 100 100 100
+//vary bb 0 1 0 25
+mesh : tst
