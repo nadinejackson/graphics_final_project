@@ -22,6 +22,9 @@ def draw_scanline(x0, z0, x1, z1, y, screen, zbuffer, color):
 
 def draw_gscanline(x0, z0, x1, z1, y, screen, zbuffer, c0, c1):
     if x0 > x1:
+        c = c0
+        c0 = c1
+        c1 = c
         tx = x0
         tz = z0
         x0 = x1
@@ -68,11 +71,12 @@ def iterate_convert(polygons, i, screen, zbuffer, normals, shading,  view, ambie
     normal = normals[(int(points[MID][0] * 100) / 100.0,\
                       int(points[MID][1] * 100) / 100.0,\
                       int(points[MID][2] * 100) / 100.0)]
-    c1 = get_lighting(normal, view, ambient, light, symbols, reflect )
+    cmid = get_lighting(normal, view, ambient, light, symbols, reflect )
     normal = normals[(int(points[TOP][0] * 100) / 100.0,\
                       int(points[TOP][1] * 100) / 100.0,\
                       int(points[TOP][2] * 100) / 100.0)]
     c2 = get_lighting(normal, view, ambient, light, symbols, reflect )
+    c1 = c0
     
     distance0 = int(points[TOP][1]) - y * 1.0 + 1
     distance1 = int(points[MID][1]) - y * 1.0 + 1
@@ -87,12 +91,9 @@ def iterate_convert(polygons, i, screen, zbuffer, normals, shading,  view, ambie
     dc2 = []
     for i in range(3):
         dc0.append((c2[i] - c0[i]) / distance0 if distance0 != 0 else 0)
-        dc1.append((c1[i] - c0[i]) / distance1 if distance1 != 0 else 0)
+        dc1.append((cmid[i] - c0[i]) / distance1 if distance1 != 0 else 0)
 
     while y <= int(points[TOP][1]):
-        for i in range(3):
-            c0[i] += dc0[i]
-            c1[i] += dc1[i]
         if ( not flip and y >= int(points[MID][1])):
             flip = True
 
@@ -101,7 +102,7 @@ def iterate_convert(polygons, i, screen, zbuffer, normals, shading,  view, ambie
             x1 = points[MID][0]
             z1 = points[MID][2]
             for i in range(3):
-                dc1[i] = (c2[i] - c1[i]) / distance2 if distance2 != 0 else 0
+                dc1[i] = (c2[i] - cmid[i]) / distance2 if distance2 != 0 else 0
 
         #draw_line(int(x0), y, z0, int(x1), y, z1, screen, zbuffer, color)
         draw_gscanline(int(x0), z0, int(x1), z1, y, screen, zbuffer, c0, c1)
@@ -109,7 +110,11 @@ def iterate_convert(polygons, i, screen, zbuffer, normals, shading,  view, ambie
         z0+= dz0
         x1+= dx1
         z1+= dz1
-        y+= 1    
+        y+= 1
+        
+        for i in range(3):
+            c0[i] += dc0[i]
+            c1[i] += dc1[i]
 
 def scanline_convert(polygons, i, screen, zbuffer, color, shading):
     flip = False
