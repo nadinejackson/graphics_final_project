@@ -4,6 +4,8 @@ from display import *
 from matrix import *
 from draw import *
 
+light_global = [[[0.5,0.75,1],\
+                 [255,255,255]]]
 """======== first_pass( commands ) ==========
 
   Checks the commands array for any animation commands
@@ -60,11 +62,16 @@ def first_pass( commands ):
   ===================="""
 def second_pass( commands, num_frames ):
     frames = [ {} for i in range(num_frames) ]
+    light = []
     for command in commands:
         if command["op"] == "vary":
             for frame in range(int(command["args"][0]), int(command["args"][1] + 1)):
                 frames[frame][command["knob"]] = command["args"][2] + (command["args"][3] - command["args"][2]) * (frame - command["args"][0])/(command["args"][1] - command["args"][0])
-    return frames
+        elif command["op"] == "light":
+            print(command)
+            light.append([[command["args"][3], command["args"][4], command["args"][5]],\
+                          [command["args"][0], command["args"][1], command["args"][2]]])
+    return (frames, light)
 
 
 def run(filename):
@@ -78,19 +85,13 @@ def run(filename):
     else:
         print "Parsing failed."
         return
-
+    print(symbols)
     view = [0,
             0,
             1];
     ambient = [150,
                50,
                200]
-    light = [[0.5,
-              0.75,
-              1],
-             [255,
-              255,
-              255]]
 
     color = [0, 0, 0]
     symbols['.white'] = ['constants',
@@ -100,7 +101,10 @@ def run(filename):
     reflect = '.white'
 
     (name, num_frames) = first_pass(commands)
-    frames = second_pass(commands, num_frames)
+    (frames, light) = second_pass(commands, num_frames)
+    if not light:
+        global light_global
+        light = light_global
     ctr = 0
     step_3d = 100
     while ctr < num_frames:
@@ -147,8 +151,6 @@ def run(filename):
                 tmp = []
                 reflect = '.white'
             elif c == "mesh":
-                print("no probs with the lexer")
-                print command
                 #if command['constants']:
                 #    reflect = command['constants']
                 add_mesh(tmp, command["args"][0])
