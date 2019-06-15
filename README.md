@@ -2,7 +2,9 @@ Nadine Jackson
 
 Dank Jean Icons
 
-Features:
-light
-perspective
-mesh
+Implemented Features:
+Multiple lights using the light command!
+
+Wireframe shading option!
+
+Use mesh to import .obj files!

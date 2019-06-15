@@ -19,32 +19,42 @@ def draw_scanline(x0, z0, x1, z1, y, screen, zbuffer, color):
         plot(screen, zbuffer, color, x, y, z)
         x+= 1
         z+= delta_z
-def iterate_convert(polygons, i, screen, zbuffer, view, ambient, light, symbols, reflect, shading):
+
+def draw_gscanline(x0, z0, x1, z1, y, screen, zbuffer, c0, c1):
+    if x0 > x1:
+        tx = x0
+        tz = z0
+        x0 = x1
+        z0 = z1
+        x1 = tx
+        z1 = tz
+
+    x = x0
+    z = z0
+    delta_z = (z1 - z0) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+    delta_c = [(c1[0] - c0[0]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0,
+               (c1[1] - c0[1]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0,
+               (c1[2] - c0[2]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+               ]
+
+    while x <= x1:
+        plot(screen, zbuffer, c0, x, y, z)
+        x+= 1
+        z+= delta_z
+        print(c0)
+        for i in range(3):
+            c0[i] += delta_c[i]
+def iterate_convert(polygons, i, screen, zbuffer, normals, shading,  view, ambient, light, symbols, reflect):
     flip = False
     BOT = 0
     TOP = 2
     MID = 1
 
-    normals = {}
-    for j in range(len(polygons)):
-        normals[(int(polygons[j][0] * 100)/100.0,\
-                 int(polygons[j][1] * 100)/100.0,\
-                 int(polygons[j][2] * 100)/100.0)] = [0, 0, 0]
-    for m in range(len(polygons) / 3):
-        normal = calculate_normal(polygons, 3 * m)
-        for j in range(3):
-            for k in range(3):
-                normals[(int(polygons[3 * m + j][0] * 100)/100.0,\
-                    int(polygons[3 * m + j][1] * 100)/100.0,\
-                    int(polygons[3 * m + j][2] * 100)/100.0)][k] += normal[k]
-    for boring in normals:
-        normalize(normals[boring])
 
             
     points = [ (polygons[i][0], polygons[i][1], polygons[i][2]),
                (polygons[i+1][0], polygons[i+1][1], polygons[i+1][2]),
                (polygons[i+2][0], polygons[i+2][1], polygons[i+2][2]) ]
-
     points.sort(key = lambda x: x[1])
     x0 = points[BOT][0]
     z0 = points[BOT][2]
@@ -52,28 +62,38 @@ def iterate_convert(polygons, i, screen, zbuffer, view, ambient, light, symbols,
     z1 = points[BOT][2]
     y = int(points[BOT][1])
 
-    n1 = normals[(int(points[TOP][0] * 100) / 100.0,\
-                  int(points[TOP][1] * 100) / 100.0,\
-                  int(points[TOP][2] * 100) / 100.0)]
-    n0 = normals[(int(points[BOT][0] * 100) / 100.0,\
-                  int(points[BOT][1] * 100) / 100.0,\
-                  int(points[BOT][2] * 100) / 100.0)]
+    normal = normals[(int(polygons[i][0] * 100) / 100.0,\
+                      int(polygons[i][1] * 100) / 100.0,\
+                      int(polygons[i][2] * 100) / 100.0)]
+    c0 = get_lighting(normal, view, ambient, light, symbols, reflect )
+    normal = normals[(int(polygons[i + 1][0] * 100) / 100.0,\
+                      int(polygons[i + 1][1] * 100) / 100.0,\
+                      int(polygons[i + 1][2] * 100) / 100.0)]
+    c1 = get_lighting(normal, view, ambient, light, symbols, reflect )
+    normal = normals[(int(polygons[i + 2][0] * 100) / 100.0,\
+                      int(polygons[i + 2][1] * 100) / 100.0,\
+                      int(polygons[i + 2][2] * 100) / 100.0)]
+    c2 = get_lighting(normal, view, ambient, light, symbols, reflect )
+    
     distance0 = int(points[TOP][1]) - y * 1.0 + 1
     distance1 = int(points[MID][1]) - y * 1.0 + 1
     distance2 = int(points[TOP][1]) - int(points[MID][1]) * 1.0 + 1
 
-    dn00 = (n1[0] - n0[0]) / distance0 if distance0 != 0 else 0
-    dn01 = (n1[1] - n0[1]) / distance0 if distance0 != 0 else 0
-    dn02 = (n1[2] - n0[2]) / distance0 if distance0 != 0 else 0
-    dn10 = (n1[0] - n0[0]) / distance1 if distance1 != 0 else 0
-    dn11 = (n1[1] - n0[1]) / distance1 if distance1 != 0 else 0
-    dn12 = (n1[2] - n0[2]) / distance1 if distance1 != 0 else 0
     dx0 = (points[TOP][0] - points[BOT][0]) / distance0 if distance0 != 0 else 0
     dz0 = (points[TOP][2] - points[BOT][2]) / distance0 if distance0 != 0 else 0
     dx1 = (points[MID][0] - points[BOT][0]) / distance1 if distance1 != 0 else 0
     dz1 = (points[MID][2] - points[BOT][2]) / distance1 if distance1 != 0 else 0
+    dc0 = []
+    dc1 = []
+    dc2 = []
+    for i in range(3):
+        dc0.append((c2[i] - c0[i]) / distance0 if distance0 != 0 else 0)
+        dc1.append((c1[i] - c0[i]) / distance1 if distance1 != 0 else 0)
 
     while y <= int(points[TOP][1]):
+        for i in range(3):
+            c0[i] += dc0[i]
+            c1[i] += dc1[i]
         if ( not flip and y >= int(points[MID][1])):
             flip = True
 
@@ -81,25 +101,16 @@ def iterate_convert(polygons, i, screen, zbuffer, view, ambient, light, symbols,
             dz1 = (points[TOP][2] - points[MID][2]) / distance2 if distance2 != 0 else 0
             x1 = points[MID][0]
             z1 = points[MID][2]
-        if not flip:
-            n0[0] += dn00
-            n0[1] += dn01
-            n0[2] += dn02
-        else:
-            n0[0] += dn10
-            n0[1] += dn11
-            n0[2] += dn12
-        
-        color = get_lighting(n0, view, ambient, light, symbols, reflect )
-        print(color)
+            for i in range(3):
+                dc1[i] = (c2[i] - c1[i]) / distance2 if distance2 != 0 else 0
+
         #draw_line(int(x0), y, z0, int(x1), y, z1, screen, zbuffer, color)
-        draw_scanline(int(x0), z0, int(x1), z1, y, screen, zbuffer, color)
+        draw_gscanline(int(x0), z0, int(x1), z1, y, screen, zbuffer, c0, c1)
         x0+= dx0
         z0+= dz0
         x1+= dx1
         z1+= dz1
-        y+= 1
-
+        y+= 1    
 
 def scanline_convert(polygons, i, screen, zbuffer, color, shading):
     flip = False
@@ -194,7 +205,22 @@ def draw_polygons( polygons, screen, zbuffer, view, ambient, light, symbols, ref
                             polygons[point+2][2],
                             screen, zbuffer, color)
             elif shading == "gouraud":
-                iterate_convert(polygons, point, screen, zbuffer, view, ambient, light, symbols, reflect, shading)
+                
+                normals = {}
+                for j in range(len(polygons)):
+                    normals[(int(polygons[j][0] * 100)/100.0,\
+                             int(polygons[j][1] * 100)/100.0,\
+                             int(polygons[j][2] * 100)/100.0)] = [0, 0, 0]
+                for m in range(len(polygons) / 3):
+                    normal = calculate_normal(polygons, 3 * m)
+                    for j in range(3):
+                        for k in range(3):
+                            normals[(int(polygons[3 * m + j][0] * 100)/100.0,\
+                                int(polygons[3 * m + j][1] * 100)/100.0,\
+                                int(polygons[3 * m + j][2] * 100)/100.0)][k] += normal[k]
+                for boring in normals:
+                    normalize(normals[boring])
+                iterate_convert(polygons, point, screen, zbuffer, normals, shading,  view, ambient, light, symbols, reflect)
             else:
                 scanline_convert(polygons, point, screen, zbuffer, color, shading)
         point+= 3
