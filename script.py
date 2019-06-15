@@ -67,12 +67,7 @@ def second_pass( commands, num_frames ):
         if command["op"] == "vary":
             for frame in range(int(command["args"][0]), int(command["args"][1] + 1)):
                 frames[frame][command["knob"]] = command["args"][2] + (command["args"][3] - command["args"][2]) * (frame - command["args"][0])/(command["args"][1] - command["args"][0])
-        elif command["op"] == "light":
-            print(command)
-            light.append([[command["args"][3], command["args"][4], command["args"][5]],\
-                          [command["args"][0], command["args"][1], command["args"][2]]])
-    return (frames, light)
-
+    return frames
 
 def run(filename):
     """
@@ -99,14 +94,21 @@ def run(filename):
                           'green': [0.2, 0.5, 0.5],
                           'blue': [0.2, 0.5, 0.5]}]
     reflect = '.white'
-
+    light = []
+    shading = "flat"
+    for symbol in symbols:
+        if symbols[symbol][0] == "light":
+            light.append([symbols[symbol][1]["color"], symbols[symbol][1]["location"]])
+        elif symbol == "shading":
+            shading = symbols["shading"][1]
+    
     (name, num_frames) = first_pass(commands)
-    (frames, light) = second_pass(commands, num_frames)
-    if not light:
+    frames = second_pass(commands, num_frames)
+    if len(light) == 0:
         global light_global
         light = light_global
     ctr = 0
-    step_3d = 100
+    step_3d = 12
     while ctr < num_frames:
         tmp = new_matrix()
         ident( tmp )
@@ -129,7 +131,7 @@ def run(filename):
                         args[0], args[1], args[2],
                         args[3], args[4], args[5])
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect)
+                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect, shading)
                 tmp = []
                 reflect = '.white'
             elif c == 'sphere':
@@ -138,7 +140,7 @@ def run(filename):
                 add_sphere(tmp,
                            args[0], args[1], args[2], args[3], step_3d)
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect)
+                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect, shading)
                 tmp = []
                 reflect = '.white'
             elif c == 'torus':
@@ -147,7 +149,7 @@ def run(filename):
                 add_torus(tmp,
                           args[0], args[1], args[2], args[3], args[4], step_3d)
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect)
+                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect, shading)
                 tmp = []
                 reflect = '.white'
             elif c == "mesh":
@@ -155,7 +157,7 @@ def run(filename):
                 #    reflect = command['constants']
                 add_mesh(tmp, command["args"][0])
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect)
+                draw_polygons(tmp, screen, zbuffer, view, ambient, light, symbols, reflect, shading)
                 tmp = []
                 reflect = '.white'
             elif c == 'line':
@@ -213,7 +215,8 @@ def run(filename):
         print int(50 * ctr / num_frames) * "*" + (50 - int(50 * ctr / num_frames)) * "-"
         #display(screen)
         save_extension(screen, "anim/" + name + str(100 + ctr) + ".png")
-    print(chr(27) + "[2J")
-    print("Making animation...")
-    make_animation(name)
+    if num_frames != 0:
+        print(chr(27) + "[2J")
+        print("Making animation...")
+        make_animation(name)
 

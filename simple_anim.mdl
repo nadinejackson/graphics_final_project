@@ -1,14 +1,11 @@
-frames 50
-basename simple_50
 push
 move 250 250 0
-rotate y 360 boii
-vary boii 0 49 0 1
 light jerry 200 200 50 1.0 1.0 0
-rotate x 90 boi
-vary boi 0 24 0 1
-vary boi 25 49 1 0
-torus -300 0 0 50 75
-scale 100 100 100
+light tom 120 30 30 -1.0 -0.75 -0.1
+sphere 0 0 0 200
+//scale 100 100 100
 //vary bb 0 1 0 25
-mesh : tst
+//mesh :tst
+shading gouraud
+save faster.png
+
