@@ -7,4 +7,4 @@ Multiple lights using the light command!
 
 Wireframe shading option!
 
-Use mesh to import .obj files!
+Use mesh to import .obj files! (triangles and quadrilaterals!)
