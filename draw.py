@@ -288,7 +288,7 @@ def add_mesh(polygons, filename):
                             triangle[6], triangle[7], triangle[8],\
                             triangle[9], triangle[10], triangle[11])
             else:
-                print("that's a big polygon")
+                pass
             
 ##    for line in g:
 ##        if "f " == line[0:2]:
